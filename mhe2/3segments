@@ -1,0 +1,40 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <sstream>
+using namespace std;
+
+using my_graph_t = vector<vector<int>>;
+
+my_graph_t load_problem(string fname)
+{
+    ifstream inputfile(fname);
+    my_graph_t result;
+    std::string line;
+    while (std::getline(inputfile, line)) {
+        vector<int> row;
+        std::istringstream iss(line);
+        double value;
+        while (!iss.eof()) {
+            iss >> value;
+            row.push_back(value);
+        }
+        result.push_back(row);
+    }
+    return result;
+}
+    void print_mat(my_graph_t graph){
+        cout<<"Values Uploaded:"<<endl;;
+    for (auto row : graph) {
+        for (auto v : row) {
+            cout << v << " ";
+        }
+        cout<<","<<endl;
+    }
+}
+int main(){
+   auto problem = load_problem("3segments.txt");
+   print_mat(problem);
+    return 0;
+}
