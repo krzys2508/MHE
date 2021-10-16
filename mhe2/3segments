@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <algorithm> 
 using namespace std;
 
 using my_graph_t = vector<vector<int>>;
@@ -19,22 +20,53 @@ my_graph_t load_problem(string fname)
         while (!iss.eof()) {
             iss >> value;
             row.push_back(value);
+            }
+        result.push_back(row);
+    }
+    return result;
+}
+my_graph_t load_problem_considering_the_domain(string fname, int b, int t)
+{
+    ifstream inputfile(fname);
+    my_graph_t result;
+    std::string line;
+    while (std::getline(inputfile, line)) {
+        vector<int> row;
+        std::istringstream iss(line);
+        double value;
+        while (!iss.eof()) {
+            iss >> value;
+            if(value<t && value>b){
+            row.push_back(value);
+            }
         }
         result.push_back(row);
     }
     return result;
 }
+
     void print_mat(my_graph_t graph){
-        cout<<"Values Uploaded:"<<endl;;
     for (auto row : graph) {
         for (auto v : row) {
             cout << v << " ";
         }
-        cout<<","<<endl;
+        cout<<endl;
     }
 }
+
 int main(){
-   auto problem = load_problem("3segments.txt");
-   print_mat(problem);
+    int top;
+    int bottom;
+    cout<<"Provide bottom of the domain: ";
+    cin>>bottom;
+    cout<<"Provide top of the domain: ";
+    cin>>top;
+
+   auto problem_without_domain = load_problem("3segments.txt");
+   auto problem_with_domain = load_problem_considering_the_domain("3segments.txt",bottom,top);
+   cout<<"Values uploaded within the domain: "<<endl;
+   print_mat(problem_with_domain);
+   cout<<"Values uploaded not considering the domain: "<<endl;
+   print_mat(problem_without_domain);
     return 0;
 }
