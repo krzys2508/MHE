@@ -4,27 +4,35 @@
 #include <vector>
 #include <sstream>
 #include <algorithm> 
+#include <numeric>
 using namespace std;
 
-using my_graph_t = vector<vector<int>>;
 
-my_graph_t load_problem(string fname)
+// using my_vector = vector<vector<int>>;
+using my_vector = vector<int>;
+
+my_vector loadData(string fname)
 {
     ifstream inputfile(fname);
-    my_graph_t result;
-    std::string line;
-    while (std::getline(inputfile, line)) {
-        vector<int> row;
-        std::istringstream iss(line);
-        double value;
-        while (!iss.eof()) {
-            iss >> value;
-            row.push_back(value);
-            }
-        result.push_back(row);
+    my_vector result;
+    string line;
+    int value;
+    while (inputfile>>value){
+        if(value>0){
+        result.push_back(value);
+    }
     }
     return result;
 }
+// bool canBePartitioned (my_vector vc){
+//     int sum = accumulate(vc.begin(), vc.end(),0);
+//     if(sum%3==0){
+//        return true;
+//    }
+//    else {
+//        return false;
+//    }
+// }
 // my_graph_t load_problem_considering_the_domain(string fname, int b, int t)
 // {
 //     ifstream inputfile(fname);
@@ -45,14 +53,11 @@ my_graph_t load_problem(string fname)
 //     return result;
 // }
 
-    void print_mat(my_graph_t graph){
-    for (auto row : graph) {
-        for (auto v : row) {
-            cout << v << " ";
+    void printResults(my_vector vec){
+    for (int value : vec) {
+       cout<<value<<" ";
         }
-        cout<<endl;
     }
-}
 
 int main(int argc, char**argv){
     // int top;
@@ -62,11 +67,11 @@ int main(int argc, char**argv){
     // cout<<"Provide top of the domain: ";
     // cin>>top;
     string directory = "C:\\Users\\krzys\\Desktop\\szkola\\MHE\\"; 
-    auto problem_without_domain = load_problem(directory +argv[1]);
+    auto problem = loadData(directory +argv[1]);
 //    auto problem_with_domain = load_problem_considering_the_domain("3segments.txt",bottom,top);
 //    cout<<"Values uploaded within the domain: "<<endl;
 //    print_mat(problem_with_domain);
    cout<<"Values uploaded: "<<endl;
-   print_mat(problem_without_domain);
+   printResults(problem);
     return 0;
 }
