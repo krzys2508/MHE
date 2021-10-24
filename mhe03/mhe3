@@ -1,0 +1,166 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <sstream>
+#include <algorithm>
+#include <numeric>
+#include <random>
+#include <functional>
+using namespace std;
+
+using my_vector = vector<int>;
+using my_result_vector = vector<vector<int>>;
+
+mt19937 rand_gen(1);
+
+my_vector generateRandomProblem(int n)
+{
+    vector<int> vector;
+    uniform_int_distribution<int> distr(0, n * 2);
+    for (int i = 0; i < n; i++)
+    {
+        vector.push_back(distr(rand_gen));
+    }
+    return vector;
+}
+
+ostream &operator<<(ostream &o, vector<double> v)
+{
+    for (auto e : v)
+    {
+        o << e << ",";
+    }
+    return o;
+}
+
+double goal_solution(my_result_vector v, int target)
+{
+    double score = 0;
+    {
+        for (int i = 0; i < v.size(); i++)
+        {
+            int size = v[i].size();
+            int sum = accumulate(v[i].begin(), v[i].end(), 0);
+            if (size != 3)
+            {
+                score += 1;
+            }
+            if (sum != target)
+            {
+                score += 1;
+            }
+        }
+    }
+    return score;
+}
+
+my_result_vector generate_solution(my_vector v)
+{
+    int sum = accumulate(v.begin(), v.end(), 0);
+    cout<<sum<<endl;
+    int size = v.size();
+    cout<<size<<endl;
+    int numberOfPartitions = size / 3;
+    vector<vector<int>> result (numberOfPartitions);
+    int targetSumPerPartition = sum / numberOfPartitions;
+    int partitionIndex = 0;
+    if (sum % 3 == 0)
+    {
+       while(v.size())
+        {
+            uniform_int_distribution<int> distr(0, v.size() - 1);
+            int index = distr(rand_gen);
+            int value = v.at(index);
+            if (result[partitionIndex].size() < 3)
+            {
+                result[partitionIndex].push_back(value);
+                cout<<"number " << value << "has been added to partition number "<<partitionIndex<<endl;
+                v.erase(v.begin() + index);
+            }
+            else
+            {
+                cout<<"rising partition index "<<endl;
+                partitionIndex++;
+            }
+        }
+    }
+    else {
+        cout<<"Cannot be partitioned";
+    }
+    return result;
+}
+
+my_result_vector get_next_point(my_result_vector p)
+{
+    next_permutation(p.begin(), p.end());
+    return p;
+}
+
+my_result_vector brute_force(my_vector problem, int target)
+{
+    my_result_vector best_p = generate_solution(problem);
+    double best_goal_val = goal_solution(best_p, target);
+    auto p = best_p; // current work point
+    const auto p0 = p;
+    do {
+        if (goal_solution(p, target) < best_goal_val) {
+            best_goal_val = goal_solution(p, target);
+            best_p = p;
+            cout << "found better: " << best_goal_val << endl;
+        }
+        p = get_next_point(p);
+    } while (!(p == p0));
+    return best_p;
+}
+
+my_vector loadData(string fname)
+{
+    ifstream inputfile(fname);
+    my_vector result;
+    string line;
+    int value;
+    while (inputfile >> value)
+    {
+        if (value > 0)
+        {
+            result.push_back(value);
+        }
+    }
+    return result;
+}
+
+void printProblem(my_vector vec)
+{
+    for (int value : vec)
+    {
+        cout << value << " ";
+    }
+}
+
+int getTarget(my_vector v)
+{
+    int sum = accumulate(v.begin(), v.end(), 0);
+    int size = v.size();
+    int numberOfPartitions = size / 3;
+    int targetSumPerPartition = sum / numberOfPartitions;
+
+    return targetSumPerPartition;
+}
+
+int main(int argc, char **argv)
+{
+    auto problemg = generateRandomProblem(9);
+    string directory = "C:\\Users\\krzys\\Desktop\\szkola\\MHE\\";
+    auto problem = loadData(directory + argv[1]);
+    cout << "Values uploaded: " << endl;
+    printProblem(problem);
+    cout << endl;
+    int target = getTarget(problem);
+    my_result_vector randomResult;
+    randomResult = generate_solution(problem);
+    double score = goal_solution(randomResult, target);
+    brute_force(problem, target);
+    cout<<score;
+    return 0;
+}
