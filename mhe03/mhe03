@@ -25,7 +25,7 @@ my_vector generateRandomProblem(int n)
     return vector;
 }
 
-ostream &operator<<(ostream &o, vector<double> v)
+ostream& operator<<(ostream& o, vector<double> v)
 {
     for (auto e : v)
     {
@@ -102,9 +102,12 @@ my_result_vector generate_solution(my_vector v)
 my_result_vector get_next_point(my_result_vector p)
 {
     my_vector workedOn;
-    my_vector workedOn2;
+    my_result_vector allPermutations;
+    int numberOfPartitions = allPermutations.size() / 3;
+    my_result_vector sorted (allPermutations.size()*numberOfPartitions);
     int partitionIndex = 0;
     int size = 0;
+    int value;
     for (int i = 0; i < p.size(); i++)
     {
         for (int j = 0; j < p[i].size(); j++)
@@ -112,32 +115,28 @@ my_result_vector get_next_point(my_result_vector p)
             workedOn.push_back(p[i][j]);
         }
     }
-      for (int i = 0; i<workedOn.size();i++){
-          cout<<workedOn[i]<<endl;
-      }
-for (int i = 0; i<workedOn.size();i++){
-    sort(workedOn.begin(), workedOn.end());
-    do
-    {
-        workedOn2.push_back(workedOn[i]);
-    }while(next_permutation(workedOn.begin(),workedOn.end()));
-}
-my_result_vector allPermutations (workedOn2.size()/4);
-        for(int k = 0; k<workedOn2.size(); k++)
+        sort(workedOn.begin(), workedOn.end());
+        do
         {
-            int value = workedOn2.at(k);
-            if (allPermutations[partitionIndex].size() < 3)
-            {
-                allPermutations[partitionIndex].push_back(value);
-            }
-            else
-            {
-                partitionIndex++;
-                size = 0;
-            }
-        }
+           
+                allPermutations.push_back(workedOn);
+       
+        } while (next_permutation(workedOn.begin(), workedOn.end()));
 
-        //   cout<<allPermutations[0][0];
+        for (int k = 0; k < allPermutations.size(); k++) {
+            for (int w = 0; w < allPermutations[k].size(); w++) {
+
+                value = allPermutations[k][w];
+                cout << value<<",";
+                //if (sorted[partitionIndex].size() < 3) {
+                  //  sorted[partitionIndex].push_back(value);
+                 //}
+               //else {
+                 //    partitionIndex++;
+              //}
+            }
+
+       }
     return allPermutations;
 }
 
@@ -168,14 +167,14 @@ void printProblem(my_vector vec)
 
 void printAllPermutations(my_result_vector res)
 {
-               for (auto a : res){
-                   cout<<"{";
-                for(auto b: a){
-                    cout<<b;
-                }
-                cout<<"}";
-            }
-            cout<<endl;
+    for (auto a : res) {
+        cout << "{";
+        for (auto b : a) {
+            cout << b;
+        }
+        cout << "}";
+        cout << endl;
+    }
 }
 int getTarget(my_vector v)
 {
@@ -187,18 +186,19 @@ int getTarget(my_vector v)
     return targetSumPerPartition;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     auto problemg = generateRandomProblem(9);
     string directory = "C:\\Users\\krzys\\Desktop\\szkola\\MHE\\";
-    auto problem = loadData(directory + argv[1]);
+    //auto problem = loadData(directory + argv[1]);
+    auto problem = {1,2,5,6,7,9};
     cout << "Values uploaded: " << endl;
     printProblem(problem);
     cout << endl;
     my_result_vector randomResult;
     randomResult = generate_solution(problem);
     my_result_vector permutations = get_next_point(randomResult);
-    printAllPermutations(permutations);
+    //printAllPermutations(permutations);
     // double score = goal_solution(randomResult, target);
     // brute_force(problem, target);
     // cout<<score;
