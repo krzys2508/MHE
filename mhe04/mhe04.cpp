@@ -56,6 +56,26 @@ my_vector loadData(string fname)
     return result;
 }
 
+void saveData(string fileName, my_result_vector v, int a)
+{
+    ofstream outdata;
+    outdata.open(fileName);
+    if (!outdata)
+    {
+        cout << "File cannot be found!";
+    }
+    for (int i = 0; i < v.size(); i++)
+    {
+        for (int j = 0; j < v[i].size(); j++)
+        {
+            outdata<<v[j][i]<<",";
+        }
+    }
+    outdata<<endl;
+    outdata<<a;
+    outdata.close();
+}
+
 my_result_vector next_solution(my_vector v)
 {
     int sum = accumulate(v.begin(), v.end(), 0);
@@ -110,7 +130,7 @@ double goal_function(my_result_vector triplets)
     {
         if (targets[j] != expectedSumPerPartition)
         {
-            score += 1;
+            score += abs(sums[j] - expectedSumPerPartition);
         }
     }
     cout << score << endl;
@@ -179,5 +199,6 @@ int main(int argc, char **argv)
     cout << "Best found solution: ";
     printSolution(best_solution);
     cout << "With score of : ";
-    goal_function(best_solution);
+    int goal = goal_function(best_solution);
+    saveData("results.txt", best_solution, goal);
 }
