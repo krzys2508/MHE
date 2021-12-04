@@ -238,5 +238,6 @@ int main(int argc, char **argv)
     int goalHC = goal_function(best_solutionHC);
     cout<<"with a Score of: ";
     cout << goalHC << endl;
-    saveData("results.txt", best_solutionHC, goalHC);
+    saveData("resultsBF.txt", best_solutionBF,goalBF);
+    saveData("resultsHC.txt",best_solutionHC,goalHC);
 }
