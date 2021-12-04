@@ -1,0 +1,242 @@
+#include <iostream>
+#include <functional>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <random>
+#include <algorithm>
+#include <numeric>
+#include <chrono>
+
+using namespace std;
+
+using my_vector = vector<int>;
+
+using my_result_vector = vector<vector<int>>;
+
+random_device rd;
+mt19937 rand_gen(rd());
+
+void printSolution(my_result_vector res)
+{
+    for (auto a : res)
+    {
+        cout << "{";
+        for (auto b : a)
+        {
+            cout << b << ",";
+        }
+        cout << "}";
+    }
+    cout << endl;
+}
+
+void printProblem(my_vector vec)
+{
+    for (int value : vec)
+    {
+        cout << value << " ";
+    }
+    cout << endl;
+}
+
+my_vector loadData(string fname)
+{
+    ifstream inputfile(fname);
+    my_vector result;
+    string line;
+    int value;
+    while (inputfile >> value)
+    {
+        if (value > 0)
+        {
+            result.push_back(value);
+        }
+    }
+    return result;
+}
+
+void saveData(string fileName, my_result_vector v, int a)
+{
+    ofstream outdata;
+    outdata.open(fileName);
+    if (!outdata)
+    {
+        cout << "File cannot be found!";
+    }
+    for (int i = 0; i < v.size(); i++)
+    {
+        for (int j = 0; j < v[i].size(); j++)
+        {
+            outdata << v[j][i] << ",";
+        }
+    }
+    outdata << endl;
+    outdata << a;
+    outdata.close();
+}
+
+my_result_vector next_solution(my_vector v)
+{
+    int sum = accumulate(v.begin(), v.end(), 0);
+    int size = v.size();
+    int numberOfPartitions = size / 3;
+    my_result_vector result(numberOfPartitions);
+    int partitionIndex = 0;
+    if (sum % 3 == 0)
+    {
+        while (v.size())
+        {
+            uniform_int_distribution<int> distr(0, v.size() - 1);
+            int index = distr(rand_gen);
+            int value = v.at(index);
+            if (result[partitionIndex].size() < 3)
+            {
+                result[partitionIndex].push_back(value);
+                // cout << "number " << value << "has been added to partition number " << partitionIndex << endl;
+                v.erase(v.begin() + index);
+            }
+            else
+            {
+                // cout << "rising partition index " << endl;
+                partitionIndex++;
+            }
+        }
+        return result;
+    }
+    else
+    {
+
+        cout << "Cannot be partitioned !!";
+    }
+}
+double goal_function(my_result_vector triplets)
+{
+    double total = 0;
+    my_vector sums;
+
+    for (int i = 0; i < triplets.size(); i++)
+    {
+        int sum = accumulate(triplets[i].begin(), triplets[i].end(), 0);
+        sums.push_back(sum);
+    }
+    total = accumulate(sums.begin(), sums.end(), 0);
+    int expectedSumPerPartition = total / triplets.size();
+
+    int score = 0;
+    for (int j = 0; j < sums.size(); j++)
+    {
+        if (sums[j] != expectedSumPerPartition)
+        {
+            score += abs(sums[j] - expectedSumPerPartition);
+        }
+    }
+    // cout << score << endl;
+    return score;
+}
+
+vector<my_result_vector> all_permutations(my_result_vector triplets)
+{
+    vector<my_result_vector> all_permutations;
+    for (int i = 0; i < triplets.size(); i++)
+    {
+        sort(triplets[i].begin(), triplets[i].end());
+        do
+        {
+            all_permutations.push_back(triplets);
+        } while (next_permutation(triplets[i].begin(), triplets[i].end()));
+    }
+    return all_permutations;
+}
+
+my_result_vector brute_force(my_result_vector triplets, vector<int> v)
+{
+    vector<my_result_vector> checked_solutions;
+    int current_score;
+    my_result_vector best_solution;
+    int best_score;
+
+    do
+    {
+        my_result_vector current_triplets = next_solution(v);
+        if (!(find(checked_solutions.begin(), checked_solutions.end(), current_triplets) != checked_solutions.end()))
+        {
+            current_score = goal_function(current_triplets);
+            checked_solutions.push_back(current_triplets);
+
+            if (current_score < best_score)
+            {
+                best_score = current_score;
+                best_solution = current_triplets;
+            }
+            vector<my_result_vector> every_permutation = all_permutations(current_triplets);
+
+            for (int w = 0; w < every_permutation.size(); w++)
+            {
+                current_score = goal_function(every_permutation[w]);
+                checked_solutions.push_back(every_permutation[w]);
+            }
+        }
+    } while (current_score != 0);
+    return best_solution;
+}
+my_result_vector hill_climb( vector<int> v, int iterations)
+{
+    vector<my_result_vector> checked_solutions;
+    int current_score;
+    my_result_vector best_solution = next_solution(v);
+    int best_score;
+    auto s = best_solution;
+    auto s0 = s;
+    best_score=goal_function(s0);
+    for (int i = 0; i < iterations; i++)
+    {
+        s = next_solution(v);
+        if (!(find(checked_solutions.begin(), checked_solutions.end(), s) != checked_solutions.end()))
+        {
+            // printSolution(current_triplets);
+            current_score = goal_function(s);
+            checked_solutions.push_back(s);
+
+            if (current_score < best_score)
+            {
+                best_score = current_score;
+                best_solution = s;
+            }
+            vector<my_result_vector> every_permutation = all_permutations(s);
+            // cout << "Printing all permutations of the given set : " << endl;
+
+            for (int w = 0; w < every_permutation.size(); w++)
+            {
+                // printSolution(every_permutation[w]);
+                current_score = goal_function(every_permutation[w]);
+                checked_solutions.push_back(every_permutation[w]);
+            }
+        }
+    }
+    return best_solution;
+}
+
+int main(int argc, char **argv)
+{
+
+    string directory = "C:\\Users\\krzys\\Desktop\\szkola\\MHE\\";
+    auto problem = loadData(directory + argv[1]);
+    cout << "Values uploaded: " << endl;
+    printProblem(problem);
+    my_result_vector random_solution = next_solution(problem);
+    cout << endl;
+    my_result_vector best_solutionBF = brute_force(random_solution, problem);
+    cout << "Best found solution found using Brute Force : ";
+    printSolution(best_solutionBF);
+    cout << "With score of : ";
+    int goalBF = goal_function(best_solutionBF);
+    cout<<goalBF<<endl;
+    my_result_vector best_solutionHC = hill_climb(problem,1000);
+    cout<<"Best found solution using Hill Climb: ";
+    printSolution(best_solutionHC);
+    int goalHC = goal_function(best_solutionHC);
+    cout<<"with a Score of: ";
+    cout << goalHC << endl;
+    saveData("results.txt", best_solutionHC, goalHC);
+}
