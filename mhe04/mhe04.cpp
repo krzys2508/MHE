@@ -68,7 +68,7 @@ void saveData(string fileName, my_result_vector v, int a)
     {
         for (int j = 0; j < v[i].size(); j++)
         {
-            outdata<<v[j][i]<<",";
+            outdata<<v[i][j]<<",";
         }
     }
     outdata<<endl;
@@ -190,7 +190,7 @@ int main(int argc, char **argv)
 {
 
     string directory = "C:\\Users\\krzys\\Desktop\\szkola\\MHE\\";
-    auto problem = loadData(directory + argv[1]);
+    auto problem = loadData( argv[1]);
     cout << "Values uploaded: " << endl;
     printProblem(problem);
     my_result_vector random_solution = next_solution(problem);
@@ -198,7 +198,7 @@ int main(int argc, char **argv)
     my_result_vector best_solution = brute_force(random_solution, problem);
     cout << "Best found solution: ";
     printSolution(best_solution);
-    cout << "With score of : ";
     int goal = goal_function(best_solution);
+    cout << "With score of : "<<goal;
     saveData("results.txt", best_solution, goal);
 }
