@@ -277,18 +277,18 @@ my_result_vector hill_climb(vector<int> problem, int n,
 }
   
 
-  my_result_vector tabu_search(vector<int> numbers, int N, int tabu_size,
+  my_result_vector tabu_search(vector<int> problem, int n, int tabu_size,
                         function<void(int c, double dt)> on_statistics = [](int c, double dt) {}){
 
     auto start = chrono::steady_clock::now();
 
-    my_result_vector best_solution = next_solution(numbers);
+    my_result_vector best_solution = next_solution(problem);
     double best_score = goal_function(best_solution);
 
     set<vector<vector<int>>> tabu_set;
     list<vector<vector<int>>> tabu_list;
 
-    double score_check;
+    double score;
 
     auto is_in_tabu = [&](auto e) {
         return tabu_set.count(e);
@@ -308,25 +308,25 @@ my_result_vector hill_climb(vector<int> problem, int n,
 
     auto current_triplets = best_solution;
 
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < n; i++) {
 
-        auto current_neighbours = generate_all_neighbours(best_solution);
+        auto neighbours = generate_all_neighbours(best_solution);
 
-        current_neighbours.erase(remove_if(current_neighbours.begin(), current_neighbours.end(), [&](auto e) { return is_in_tabu(e); }), current_neighbours.end());
+        neighbours.erase(remove_if(neighbours.begin(), neighbours.end(), [&](auto e) { return is_in_tabu(e); }), neighbours.end());
 
-        if (current_neighbours.size() == 0) break;
+        if (neighbours.size() == 0) break;
 
-        current_triplets = *min_element(current_neighbours.begin(), current_neighbours.end(), [&](auto a, auto b) {
+        current_triplets = *max_element(neighbours.begin(), neighbours.end(), [&](auto a, auto b) {
             return goal_function(a) > goal_function(b);
         });
 
         add_to_tabu(current_triplets);
 
-        score_check = goal_function(current_triplets);
+        score = goal_function(current_triplets);
 
         if (goal_function(current_triplets) < goal_function(best_solution)) {
             best_solution = current_triplets;
-            best_score = score_check;
+            best_score = score;
         }
         shrink_taboo();
     }
@@ -334,7 +334,7 @@ my_result_vector hill_climb(vector<int> problem, int n,
     auto finish = chrono::steady_clock::now();
     chrono::duration<double> duration = finish - start;
 
-    on_statistics(N, duration.count());
+    on_statistics(n, duration.count());
 
     return best_solution;
     }
