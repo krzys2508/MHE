@@ -180,48 +180,106 @@ my_result_vector brute_force(my_result_vector triplets, vector<int> v)
     } while (current_score != 0);
     return best_solution;
 }
-my_result_vector hill_climb( vector<int> v, int iterations)
-{
-    vector<my_result_vector> checked_solutions;
-    int current_score;
-    my_result_vector best_solution = next_solution(v);
-    int best_score;
-    auto s = best_solution;
-    auto s0 = s;
-    best_score=goal_function(s0);
-    for (int i = 0; i < iterations; i++)
-    {
-        s = next_solution(v);
-        if (!(find(checked_solutions.begin(), checked_solutions.end(), s) != checked_solutions.end()))
-        {
-            // printSolution(current_triplets);
-            current_score = goal_function(s);
-            checked_solutions.push_back(s);
+my_result_vector generate_random_neighbour(my_result_vector current){
+    uniform_int_distribution<int> distr_all(0, current.size()-2);
+    uniform_int_distribution<int> distr_singular(0, 2);
+    int index_set = distr_all(rand_gen);
+    int index_triplet_1 = distr_singular(rand_gen);
+    int index_triplet_2 = distr_singular(rand_gen);
+    swap(current[index_set][index_triplet_1], current[index_set+1][index_triplet_2]);
+    return current;
+}
 
-            if (current_score < best_score)
-            {
-                best_score = current_score;
-                best_solution = s;
+vector<my_result_vector> generate_all_neighbours(my_result_vector current_triplets){
+    vector<my_result_vector> all_neighbours;
+    int number_of_swaps = (current_triplets.size()-1)*3; 
+    for(int i = 0; i < current_triplets.size(); i++){
+        int triplet_2_index = 0;
+            for(int j = 0; j < 3; j++){
+                for(int k = 0; k < number_of_swaps; k++){
+                    int second_element_index = k%3;
+                    if(triplet_2_index != i) {
+                        swap(current_triplets[i][j], current_triplets[triplet_2_index][second_element_index]);
+                        if (!(find(all_neighbours.begin(), all_neighbours.end(), current_triplets) != all_neighbours.end())) {
+                            all_neighbours.push_back(current_triplets);
+                        }
+                    }
+                    else{
+                        k--;
+                        triplet_2_index++;
+                    }
+                }
             }
-            vector<my_result_vector> every_permutation = all_permutations(s);
-            // cout << "Printing all permutations of the given set : " << endl;
+        }
+    return all_neighbours;
+}
 
-            for (int w = 0; w < every_permutation.size(); w++)
-            {
-                // printSolution(every_permutation[w]);
-                current_score = goal_function(every_permutation[w]);
-                checked_solutions.push_back(every_permutation[w]);
+
+
+
+my_result_vector hill_climb_stoch(my_vector problem, int n,  std::function<void(int c, double dt)> on_statistics = [](int c, double dt) {}){
+   auto start = chrono::steady_clock::now();
+   my_result_vector best_solution = next_solution(problem);
+    double best_score = accumulate(problem.begin(), problem.end(), 0);
+
+    double score;
+
+    my_result_vector current_triplets = best_solution;
+
+
+    for(int i=0; i < n; i++){
+        current_triplets = generate_random_neighbour(best_solution);
+       //printSolution(current_triplets);
+        score = goal_function(current_triplets);
+
+        if(score < best_score){
+            best_solution = current_triplets;
+            best_score = score;
+        }
+
+    }
+
+    auto finish = chrono::steady_clock::now();
+    chrono::duration<double> duration = finish - start;
+    on_statistics(n, duration.count());
+    return best_solution;
+}
+
+
+my_result_vector hill_climb(vector<int> problem, int n,
+                                  function<void(int c, double dt)> on_statistics = [](int c, double dt) {}){
+
+    auto start = chrono::steady_clock::now();
+
+    my_result_vector best_solution = next_solution(problem);
+    double best_score = goal_function(best_solution);
+
+    double score;
+
+    for(int i=0; i < n; i++){
+        vector<my_result_vector> all_neighbours = generate_all_neighbours(best_solution);
+        for (int i = 0; i<all_neighbours.size();i++){
+            score = goal_function(all_neighbours[i]);
+            if(score<best_score){
+                best_solution = all_neighbours[i];
+                best_score = score;
             }
         }
     }
+
+    auto finish = chrono::steady_clock::now();
+    chrono::duration<double> duration = finish - start;
+    on_statistics(n, duration.count());
+
     return best_solution;
 }
+  
 
 int main(int argc, char **argv)
 {
 
     string directory = "C:\\Users\\krzys\\Desktop\\szkola\\MHE\\";
-    auto problem = loadData(directory + argv[1]);
+    auto problem = loadData( argv[1]);
     cout << "Values uploaded: " << endl;
     printProblem(problem);
     my_result_vector random_solution = next_solution(problem);
@@ -232,12 +290,25 @@ int main(int argc, char **argv)
     cout << "With score of : ";
     int goalBF = goal_function(best_solutionBF);
     cout<<goalBF<<endl;
-    my_result_vector best_solutionHC = hill_climb(problem,1000);
-    cout<<"Best found solution using Hill Climb: ";
-    printSolution(best_solutionHC);
-    int goalHC = goal_function(best_solutionHC);
-    cout<<"with a Score of: ";
-    cout << goalHC << endl;
-    saveData("resultsBF.txt", best_solutionBF,goalBF);
-    saveData("resultsHC.txt",best_solutionHC,goalHC);
+    my_result_vector best_solutionHCS = hill_climb_stoch(problem, 10,[](int c, double dt) {
+        cout << "# count HC: " << c << "; dt:  " << dt << endl;
+      });
+   int goalHCS = goal_function(best_solutionHCS);
+    cout<<"Best found soulution using HillClimb Stochastic :";
+   printSolution(best_solutionHCS);
+   cout<<"With a score of ";
+   cout<<goalHCS;
+    cout<<endl;
+     my_result_vector best_solutionHC = hill_climb(problem, 10,[](int c, double dt) {
+        cout << "# count HC: " << c << "; dt:  " << dt << endl;
+      });
+   int goalHC = goal_function(best_solutionHC);
+    cout<<"Best found soulution using HillClimb :";
+   printSolution(best_solutionHC);
+   cout<<"With a score of ";
+   cout<<goalHC;
+    cout<<endl;
+    
+    //saveData("resultsBF.txt", best_solutionBF,goalBF);
+    //saveData("resultsHC.txt",best_solutionHC,goalHC);
 }
