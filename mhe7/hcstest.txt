@@ -1,0 +1,3 @@
+HCS duration: 8.45e-05Problem size: 6Score: 0
+HCS duration: 4.27e-05Problem size: 6Score: 0
+HCS duration: 4.78e-05Problem size: 6Score: 0

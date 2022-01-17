@@ -1,0 +1,3 @@
+BF duration: 0.0003428Problem size: 6Score: 0
+BF duration: 0.0003376Problem size: 6Score: 0
+BF duration: 0.0002893Problem size: 6Score: 0
