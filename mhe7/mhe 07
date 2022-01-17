@@ -1,0 +1,439 @@
+#include <iostream>
+#include <functional>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <random>
+#include <algorithm>
+#include <numeric>
+#include <chrono>
+#include <set>
+#include <list>
+#include <map>
+
+using namespace std;
+
+using my_vector = vector<int>;
+
+using my_result_vector = vector<vector<int>>;
+
+random_device rd;
+mt19937 rand_gen(rd());
+
+void printSolution(my_result_vector res)
+{
+    for (auto a : res)
+    {
+        cout << "{";
+        for (auto b : a)
+        {
+            cout << b << ",";
+        }
+        cout << "}";
+    }
+    cout << endl;
+}
+
+void printProblem(my_vector vec)
+{
+    for (int value : vec)
+    {
+        cout << value << " ";
+    }
+    cout << endl;
+}
+
+my_vector loadData(string fname)
+{
+    ifstream inputfile(fname);
+    my_vector result;
+    string line;
+    int value;
+    while (inputfile >> value)
+    {
+        if (value > 0)
+        {
+            result.push_back(value);
+        }
+    }
+    return result;
+}
+
+void saveData(string fileName, my_result_vector v, int a)
+{
+    ofstream outdata;
+    outdata.open(fileName);
+    if (!outdata)
+    {
+        cout << "File cannot be found!";
+    }
+    for (int i = 0; i < v.size(); i++)
+    {
+        for (int j = 0; j < v[i].size(); j++)
+        {
+            outdata << v[j][i] << ",";
+        }
+    }
+    outdata << endl;
+    outdata << a;
+    outdata.close();
+}
+
+my_result_vector next_solution(my_vector v)
+{
+    int sum = accumulate(v.begin(), v.end(), 0);
+    int size = v.size();
+    int numberOfPartitions = size / 3;
+    my_result_vector result(numberOfPartitions);
+    int partitionIndex = 0;
+    if (sum % 3 == 0)
+    {
+        while (v.size())
+        {
+            uniform_int_distribution<int> distr(0, v.size() - 1);
+            int index = distr(rand_gen);
+            int value = v.at(index);
+            if (result[partitionIndex].size() < 3)
+            {
+                result[partitionIndex].push_back(value);
+                // cout << "number " << value << "has been added to partition number " << partitionIndex << endl;
+                v.erase(v.begin() + index);
+            }
+            else
+            {
+                // cout << "rising partition index " << endl;
+                partitionIndex++;
+            }
+        }
+        return result;
+    }
+    else
+    {
+
+        cout << "Cannot be partitioned !!";
+    }
+}
+double goal_function(my_result_vector triplets)
+{
+    double total = 0;
+    my_vector sums;
+
+    for (int i = 0; i < triplets.size(); i++)
+    {
+        int sum = accumulate(triplets[i].begin(), triplets[i].end(), 0);
+        sums.push_back(sum);
+    }
+    total = accumulate(sums.begin(), sums.end(), 0);
+    int expectedSumPerPartition = total / triplets.size();
+
+    int score = 0;
+    for (int j = 0; j < sums.size(); j++)
+    {
+        if (sums[j] != expectedSumPerPartition)
+        {
+            score += abs(sums[j] - expectedSumPerPartition);
+        }
+    }
+    // cout << score << endl;
+    return score;
+}
+
+vector<my_result_vector> all_permutations(my_result_vector triplets)
+{
+    vector<my_result_vector> all_permutations;
+    for (int i = 0; i < triplets.size(); i++)
+    {
+        sort(triplets[i].begin(), triplets[i].end());
+        do
+        {
+            all_permutations.push_back(triplets);
+        } while (next_permutation(triplets[i].begin(), triplets[i].end()));
+    }
+    return all_permutations;
+}
+
+my_result_vector brute_force(my_result_vector triplets, vector<int> v, ostream &outfile)
+{
+    auto start = chrono::steady_clock::now();
+    vector<my_result_vector> checked_solutions;
+    int current_score;
+    my_result_vector best_solution;
+    int best_score;
+    int i = 0;
+
+    do
+    {
+        my_result_vector current_triplets = next_solution(v);
+        if (!(find(checked_solutions.begin(), checked_solutions.end(), current_triplets) != checked_solutions.end()))
+        {
+            current_score = goal_function(current_triplets);
+            checked_solutions.push_back(current_triplets);
+
+            if (current_score < best_score)
+            {
+                best_score = current_score;
+                best_solution = current_triplets;
+            }
+            vector<my_result_vector> every_permutation = all_permutations(current_triplets);
+
+            for (int w = 0; w < every_permutation.size(); w++)
+            {
+                current_score = goal_function(every_permutation[w]);
+                checked_solutions.push_back(every_permutation[w]);
+            }
+        }
+    } while (current_score != 0);
+    auto finish = chrono::steady_clock::now();
+    chrono::duration <double> duration =finish-start;
+    outfile<< "BF duration: "<<duration.count() << "Problem size: "<< v.size()<< "Score: "<<current_score<<endl;
+    return best_solution;
+}
+my_result_vector generate_random_neighbour(my_result_vector current){
+    uniform_int_distribution<int> distr_all(0, current.size()-2);
+    uniform_int_distribution<int> distr_singular(0, 2);
+    int index_set = distr_all(rand_gen);
+    int index_triplet_1 = distr_singular(rand_gen);
+    int index_triplet_2 = distr_singular(rand_gen);
+    swap(current[index_set][index_triplet_1], current[index_set+1][index_triplet_2]);
+    return current;
+}
+
+vector<my_result_vector> generate_all_neighbours(my_result_vector current_triplets){
+    vector<my_result_vector> all_neighbours;
+    int number_of_swaps = (current_triplets.size()-1)*3; 
+    for(int i = 0; i < current_triplets.size(); i++){
+        int next_index = 0;
+            for(int j = 0; j < 3; j++){
+                for(int k = 0; k < number_of_swaps; k++){
+                    int second_index = 0;
+                        swap(current_triplets[i][j], current_triplets[next_index][second_index]);
+                        if (!(find(all_neighbours.begin(), all_neighbours.end(), current_triplets) != all_neighbours.end())) {
+                            all_neighbours.push_back(current_triplets);
+                        }
+                        second_index ++;
+                }
+            }
+        next_index++;
+        }
+    return all_neighbours;
+}
+
+
+
+
+my_result_vector hill_climb_stoch(my_vector problem, int n, ostream &outfile, std::function<void(int c, double dt)> on_statistics = [](int c, double dt) {}){
+   auto start = chrono::steady_clock::now();
+   my_result_vector best_solution = next_solution(problem);
+    double best_score = accumulate(problem.begin(), problem.end(), 0);
+
+    double score;
+
+    my_result_vector current_triplets = best_solution;
+
+    for(int i=0; i < n; i++){
+        current_triplets = generate_random_neighbour(best_solution);
+       //printSolution(current_triplets);
+        score = goal_function(current_triplets);
+
+        if(score < best_score){
+            best_solution = current_triplets;
+            best_score = score;
+        }
+
+    }
+
+     auto finish = chrono::steady_clock::now();
+    chrono::duration <double> duration =finish-start;
+    outfile<< "HCS duration: "<<duration.count() << "Problem size: "<< problem.size()<< "Score: "<<best_score<<endl;
+    return best_solution;
+}
+
+
+my_result_vector hill_climb(vector<int> problem, int n, ostream &outfile,
+                                  function<void(int c, double dt)> on_statistics = [](int c, double dt) {}){
+
+    auto start = chrono::steady_clock::now();
+
+    my_result_vector best_solution = next_solution(problem);
+    double best_score = goal_function(best_solution);
+
+    double score;
+
+    for(int i=0; i < n; i++){
+        vector<my_result_vector> all_neighbours = generate_all_neighbours(best_solution);
+        for (int i = 0; i<all_neighbours.size();i++){
+            score = goal_function(all_neighbours[i]);
+            if(score<best_score){
+                best_solution = all_neighbours[i];
+                best_score = score;
+            }
+        }
+
+    auto finish = chrono::steady_clock::now();
+    chrono::duration <double> duration =finish-start;
+    outfile<< "HC duration: "<<duration.count() << "Problem size: "<< problem.size()<< "Score: "<<score<<endl;
+    return best_solution;
+}
+
+
+}
+  
+
+  my_result_vector tabu_search(vector<int> problem, int n, int tabu_size, ostream& outfile,
+                        function<void(int c, double dt)> on_statistics = [](int c, double dt) {}){
+
+    auto start = chrono::steady_clock::now();
+
+    my_result_vector best_solution = next_solution(problem);
+    double best_score = goal_function(best_solution);
+
+    set<vector<vector<int>>> tabu_set;
+    list<vector<vector<int>>> tabu_list;
+
+    double score;
+
+    auto is_in_tabu = [&](auto e) {
+        return tabu_set.count(e);
+    };
+
+    auto add_to_tabu = [&](auto e) {
+        tabu_set.insert(e);
+        tabu_list.push_back(e);
+    };
+
+    auto shrink_taboo = [&]() {
+        if (tabu_set.size() > tabu_size) {
+            tabu_set.erase(tabu_list.front());
+            tabu_list.pop_front();
+        }
+    };
+
+    auto current_triplets = best_solution;
+
+    for (int i = 0; i < n; i++) {
+
+        auto neighbours = generate_all_neighbours(best_solution);
+
+        neighbours.erase(remove_if(neighbours.begin(), neighbours.end(), [&](auto e) { return is_in_tabu(e); }), neighbours.end());
+
+        if (neighbours.size() == 0) break;
+
+        current_triplets = *min_element(neighbours.begin(), neighbours.end(), [&](auto a, auto b) {
+            return goal_function(a) > goal_function(b);
+        });
+
+        add_to_tabu(current_triplets);
+
+        score = goal_function(current_triplets);
+
+        if (goal_function(current_triplets) < goal_function(best_solution)) {
+            best_solution = current_triplets;
+            best_score = score;
+        }
+        shrink_taboo();
+
+     auto finish = chrono::steady_clock::now();
+    chrono::duration <double> duration =finish-start;
+    outfile<< "Taboo duration: "<<duration.count() << "Problem size: "<< problem.size()<< "Score: "<<score<<endl;
+    return best_solution;
+}
+                        }
+
+// vector<int> random_problem(int number_of_triplets){
+//     vector<int> problem_set;
+
+//     uniform_int_distribution<int> random(1,30);
+
+//     for(int i=0; i<number_of_triplets*3;i++){
+//         problem_set.push_back(random(rand_gen));
+//     }
+
+//     int sum = accumulate(problem_set.begin(), problem_set.end(), 0);
+//     int control = sum%number_of_triplets;
+
+//     while(control!=0){
+//         problem_set[random(rand_gen)] -= 1;
+//         sum = accumulate(problem_set.begin(), problem_set.end(), 0);
+//         control = sum%number_of_triplets;
+//     }
+
+
+
+//     return problem_set;
+// }       
+
+int main(int argc, char **argv)
+{
+   my_vector problem = loadData(argv[1]);
+    cout<<"Enter outfile name!"<<endl;
+    string outfilename;
+    cin>>outfilename;
+    ofstream outfile(outfilename);
+    int method_selection;
+    cout<<"Select algorithm you want to use: 1 = Brute_force, 2 = Hill_climb_stochastic, 3 = Hill_Climb, 4 = Taboo";
+    cin>>method_selection;
+    if (method_selection ==1 ){
+        cout << "You Have Selected Brute Force"<<endl;
+            for (int i = 0; i <25;i++){
+                cout << "Values uploaded: " << endl;
+                printProblem(problem);
+                my_result_vector random_result =next_solution(problem);
+               brute_force(random_result,problem,outfile);
+            }
+    }
+        if (method_selection ==2 ){
+        int numbers;
+        int number_of_iterations;
+        auto on_finish =
+        [](int c, double dt) {
+            cout << "# count: " << c << "; dt:  " << dt << endl;
+        };
+        cout << "You Have Selected Hill Climb Stochastic";
+        cin>>numbers;
+        cout<<"Enter number of iterations";
+        cin>>number_of_iterations;
+                cout << "Values uploaded: " << endl;
+                printProblem(problem);
+            for (int i = 0; i <25;i++){
+                hill_climb_stoch(problem,number_of_iterations,outfile,on_finish);
+            }
+        }
+        if (method_selection ==3 ){
+        int numbers;
+        int number_of_iterations;
+        auto on_finish =
+        [](int c, double dt) {
+            cout << "# count: " << c << "; dt:  " << dt << endl;
+        };
+        cout << "You Have Selected Hill Climb";
+      
+        cout<<"Enter number of iterations";
+        cin>>number_of_iterations;
+                cout << "Values uploaded: " << endl;
+                printProblem(problem);
+            for (int i = 0; i <25;i++){
+                hill_climb(problem,number_of_iterations,outfile,on_finish);
+            }
+        }
+        if (method_selection ==4 ){
+        int numbers;
+        int number_of_iterations;
+        int taboo_size;
+        auto on_finish =
+        [](int c, double dt) {
+            cout << "# count: " << c << "; dt:  " << dt << endl;
+        };
+        cout << "You Have Selected Taboo";
+        cout<<"Enter number of iterations";
+        cin>>number_of_iterations;
+        cout<<"Enter size of taboo";
+        cin>>taboo_size;
+                cout << "Values uploaded: " << endl;
+                printProblem(problem);
+            for (int i = 0; i <25;i++){
+                tabu_search(problem,number_of_iterations,taboo_size,outfile,on_finish);
+            }
+        }
+        return 0;
+    }
+
