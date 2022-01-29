@@ -15,35 +15,7 @@ using namespace std;
 using my_vector = vector<int>;
 using my_result_vector = vector<vector<int>>;
 
-// random_device rd;
-// mt19937 rand_gen(rd());
 std::mt19937 rand_gen(time(nullptr));
-
-bool test_for_triplets(my_vector multiset)
-{
-    if (multiset.size() % 3 != 0)
-    {
-        cout << "Multiset can't be divided into triplets.";
-        return false;
-    }
-    return true;
-}
-int test_for_target(my_vector multiset)
-{
-    test_for_triplets(multiset);
-    int number_of_triplets = multiset.size() / 3;
-
-    int sum_of_numbers = 0;
-    for (int n : multiset)
-    {
-        sum_of_numbers += n;
-    }
-
-    int target = sum_of_numbers / number_of_triplets;
-    cout << "Your target is: " << target << "\n";
-
-    return target;
-}
 
 void printSolution(my_result_vector res)
 {
